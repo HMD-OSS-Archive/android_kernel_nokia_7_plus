@@ -48,19 +48,6 @@
 
 static struct drv2605L_data *pDRV2605Ldata = NULL;
 
-int getPatternValue=0;
-
-
-int vibrator_get_pattern_value()
-{
-	return getPatternValue;
-}
-
-void vibrator_set_pattern_value(int value)
-{
-	getPatternValue = value;
-}
-
 /* sysfs store function for ramp step */
 static ssize_t qpnp_hap_pattern_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
@@ -73,12 +60,15 @@ static ssize_t qpnp_hap_pattern_store(struct device *dev,
 	if (rc)
 		return rc;
 
-	printk("qpnp_hap_pattern_store vibrator get pattern value is %d\n",data);
-	vibrator_set_pattern_value(data);
-
-	cancel_work_sync(&pDrv2605Ldata->vibrator_pattern_work);
-	schedule_work(&pDrv2605Ldata->vibrator_pattern_work);
-
+	//printk("vibrator get pattern value is %d\n",data);
+	if(data==1)
+	{
+		vibrator_pattern_enable_peek2(pDrv2605Ldata);
+	}
+	else if(data==999)
+	{
+		vibrator_pattern_enable_peek(pDrv2605Ldata);
+	}
 	return count;
 }
 
@@ -653,25 +643,6 @@ static void vibrator_work_routine(struct work_struct *work)
 	mutex_unlock(&pDrv2605Ldata->lock);
 }
 
-static void vibrator_pattern_work_routine(struct work_struct *work)
-{
-	struct drv2605L_data *pDrv2605Ldata = container_of(work, struct drv2605L_data, vibrator_pattern_work);
-	int pattern_value=0;
-	pattern_value = vibrator_get_pattern_value();
-	//printk("vibrator_pattern_work_routine pattern_value = %d \n",pattern_value);
-	mutex_lock(&pDrv2605Ldata->lock);
-	if(pattern_value==1)
-	{
-		vibrator_pattern_enable_peek2(pDrv2605Ldata);
-	}
-	else if(pattern_value==999)
-	{
-		vibrator_pattern_enable_peek(pDrv2605Ldata);
-	}
-	mutex_unlock(&pDrv2605Ldata->lock);
-	//printk("vibrator_pattern_work_routine pattern_value Done\n");
-}
-
 static int dev2605L_open (struct inode * i_node, struct file * filp)
 {
 	if(pDRV2605Ldata == NULL){
@@ -1003,14 +974,14 @@ static int Haptics_init(struct drv2605L_data *pDrv2605Ldata)
 	pDrv2605Ldata->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN - 1;
 	register_early_suspend(&pDrv2605Ldata->early_suspend);
 #endif
-
+	
     hrtimer_init(&pDrv2605Ldata->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     pDrv2605Ldata->timer.function = vibrator_timer_func;
     INIT_WORK(&pDrv2605Ldata->vibrator_work, vibrator_work_routine);
-    INIT_WORK(&pDrv2605Ldata->vibrator_pattern_work, vibrator_pattern_work_routine);
+    
     wake_lock_init(&pDrv2605Ldata->wklock, WAKE_LOCK_SUSPEND, "vibrator");
     mutex_init(&pDrv2605Ldata->lock);
-
+	
     return 0;
 
 fail4:

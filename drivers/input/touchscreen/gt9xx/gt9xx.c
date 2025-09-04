@@ -23,8 +23,6 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/input/mt.h>
 #include "gt9xx.h"
-#include <linux/time.h>
-#include <linux/unistd.h>
 
 //SW4-HL-TP-BringUpGT915L-01+{_20180201
 #include "../../../fih/fih_touch.h"
@@ -594,12 +592,6 @@ static void gtp_work_func(struct goodix_ts_data *ts)
         return;
     }
 
-    if(ts->timestamp){
-        if(time_before(jiffies, ts->timestamp)){
-           pr_info("%s, time %u < timestamp %u\n",__func__,jiffies_to_msecs(jiffies),jiffies_to_msecs(ts->timestamp));
-           return;
-        }
-    }
     /* touch key event */
     if (key_value & 0xf0 || pre_key & 0xf0) {
         /* pen button */
@@ -1944,34 +1936,31 @@ err_enable_vdd_ana:
 static int gtp_power_off(struct goodix_ts_data *ts)
 {
     int ret = 0;
+    if (ts->vcc_i2c) {
+        set_bit(POWER_OFF_MODE, &ts->flags);
+        ret = regulator_disable(ts->vcc_i2c);
+        if (ret) {
+            dev_err(&ts->client->dev,
+                "Regulator vcc_i2c disable failed ret=%d\n",
+                ret);
+            goto err_disable_vcc_i2c;
+        }
+        dev_info(&ts->client->dev,
+             "Regulator vcc_i2c disabled\n");
+    }
 
-	if (strstr(saved_command_line, "androidboot.device=TAS") == NULL) {
-	    if (ts->vcc_i2c) {
-	        set_bit(POWER_OFF_MODE, &ts->flags);
-	        ret = regulator_disable(ts->vcc_i2c);
-	        if (ret) {
-	            dev_err(&ts->client->dev,
-	                "Regulator vcc_i2c disable failed ret=%d\n",
-	                ret);
-	            goto err_disable_vcc_i2c;
-	        }
-	        dev_info(&ts->client->dev,
-	             "Regulator vcc_i2c disabled\n");
-	    }
-
-	    if (ts->vdd_ana) {
-	        set_bit(POWER_OFF_MODE, &ts->flags);
-	        ret = regulator_disable(ts->vdd_ana);
-	        if (ret) {
-	            dev_err(&ts->client->dev,
-	                    "Regulator vdd disable failed ret=%d\n",
-	                    ret);
-	            goto err_disable_vdd_ana;
-	        }
-	        dev_info(&ts->client->dev,
-	             "Regulator vdd_ana disabled\n");
-	    }
-	}
+    if (ts->vdd_ana) {
+        set_bit(POWER_OFF_MODE, &ts->flags);
+        ret = regulator_disable(ts->vdd_ana);
+        if (ret) {
+            dev_err(&ts->client->dev,
+                    "Regulator vdd disable failed ret=%d\n",
+                    ret);
+            goto err_disable_vdd_ana;
+        }
+        dev_info(&ts->client->dev,
+             "Regulator vdd_ana disabled\n");
+    }
     return ret;
 
 err_disable_vdd_ana:
@@ -2493,7 +2482,7 @@ static int gtp_fb_notifier_callback(struct notifier_block *noti,
             struct goodix_ts_data, notifier);
     int *blank;
 
-    if (ev_data && ev_data->data && event == FB_EARLY_EVENT_BLANK && ts) {
+    if (ev_data && ev_data->data && event == FB_EVENT_BLANK && ts) {
         blank = ev_data->data;
         if (*blank == FB_BLANK_UNBLANK ||
             *blank == FB_BLANK_NORMAL) {
@@ -2504,7 +2493,6 @@ static int gtp_fb_notifier_callback(struct notifier_block *noti,
                 schedule_work(&ts->fb_notify_work);
             else
                 gtp_resume(ts);
-           ts->timestamp = 0;
         } else if (*blank == FB_BLANK_POWERDOWN) {
             pr_info("F@TOUCH %s FB_BLANK_POWERDOWN, NOOOOOOOOOOOO Suspend by fb notifier HERE!\n",__func__);
             dev_dbg(&ts->client->dev, "ts_suspend");
@@ -2608,18 +2596,16 @@ static int gtp_unregister_powermanager(struct goodix_ts_data *ts)
 //SW4-HL-TP-BringUpGT915L-00+{_20180119
 void fih_goodix_ts_suspend(void)
 {
-    struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
-
-    pr_err("[HL]%s: goodix_ts_suspend(ts) <-- START\n", __func__);
-    if (ts)
-    {
-
-        ts->timestamp = jiffies + HZ/2 - HZ/10;
-        pr_err("[HL]%s: ts exists, cotinute to call goodix_ts_resume(%u, %u)\n", __func__,jiffies_to_msecs(ts->timestamp), jiffies_to_msecs(jiffies));
+//    struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
+//
+//    pr_err("[HL]%s: goodix_ts_suspend(ts) <-- START\n", __func__);
+//    if (ts)
+//    {
+//        pr_err("[HL]%s: ts exists, cotinute to call goodix_ts_resume(ts)\n", __func__);
 //        gtp_suspend(ts);
-    }
-    pr_err("[HL]%s: goodix_ts_suspend(ts) <-- END\n", __func__);
-
+//    }
+//    pr_err("[HL]%s: goodix_ts_suspend(ts) <-- END\n", __func__);
+//
      return;
 }
 EXPORT_SYMBOL(fih_goodix_ts_suspend);
@@ -2628,17 +2614,16 @@ EXPORT_SYMBOL(fih_goodix_ts_suspend);
 //SW4-HL-TP-BringUpGT915L-00+{_20180119
 void fih_goodix_ts_resume(void)
 {
-    struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
-
-    pr_err("[HL]%s: goodix_ts_resume(ts) <-- START\n", __func__);
-    if (ts)
-    {
-        pr_err("[HL]%s: ts exists, cotinute to call goodix_ts_resume(ts)\n", __func__);
-        ts->timestamp = 0;
+//    struct goodix_ts_data *ts = i2c_get_clientdata(i2c_connect_client);
+//
+//    pr_err("[HL]%s: goodix_ts_resume(ts) <-- START\n", __func__);
+//    if (ts)
+//    {
+//        pr_err("[HL]%s: ts exists, cotinute to call goodix_ts_resume(ts)\n", __func__);
 //        gtp_resume(ts);
-    }
-    pr_err("[HL]%s: goodix_ts_resume(ts) <-- END\n", __func__);
-
+//    }
+//    pr_err("[HL]%s: goodix_ts_resume(ts) <-- END\n", __func__);
+//
      return;
 }
 EXPORT_SYMBOL(fih_goodix_ts_resume);

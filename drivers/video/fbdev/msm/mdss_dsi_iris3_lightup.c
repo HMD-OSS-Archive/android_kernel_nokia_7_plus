@@ -1898,12 +1898,8 @@ static void iris_send_assembled_pkt(struct iris_ctrl_opt *arr, int len)
 	uint8_t opt_id = 0;
 	int32_t rc = -1;
 	struct iris_cmd_comp cmd_comp;
-	struct iris_cfg *pcfg;
 
 	iris_init_cmds_buf(&cmd_comp, DSI_HS_MODE);
-	pcfg = iris_get_cfg();
-
-	mutex_lock(&pcfg->mutex);
 
 	for (i = 0; i < len; i++) {
 		ip = arr[i].ip;
@@ -1920,7 +1916,6 @@ static void iris_send_assembled_pkt(struct iris_ctrl_opt *arr, int len)
 		if (rc)
 			panic("%s error\n", __func__);
 	}
-	mutex_unlock(&pcfg->mutex);
 }
 
 static void iris_send_lightup_pkt(void)

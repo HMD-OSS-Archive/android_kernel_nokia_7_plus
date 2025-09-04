@@ -118,7 +118,6 @@ dtb-$(CONFIG_ARCH_MSM8996) += msm8996-v2-pmi8994-cdp.dtb \
 
 dtb-$(CONFIG_MSM_GVM_QUIN) += vplatform-lfv-msm8996-telematics.dtb \
 	vplatform-lfv-msm8996-ivi.dtb \
-	vplatform-lfv-msm8996-ivi_8GB.dtb \
 	vplatform-lfv-msm8996-baseline.dtb \
 	vplatform-lfv-msm8996-ivi-la.dtb \
 	vplatform-lfv-msm8996-ivi-lv-mt.dtb
@@ -217,9 +216,6 @@ dtb-$(CONFIG_FIH_SDM630_SDM660_PROJS) += sdm660-mtp.dtb \
 	sdm636-mtp-ctl-DVT.dtb \
   sdm636-mtp-drg-DVT1.5.dtb \
   sdm660-mtp-drg-pro-EVT.dtb \
-  sdm636-mtp-hc1-preEVT.dtb \
-  sdm660-mtp-tas-preEVT.dtb \
-  sdm660-mtp-tas-EVT.dtb \
 
 #dtb-$(CONFIG_ARCH_SDM660) += sdm660-sim.dtb \
 #	sdm660-internal-codec-cdp.dtb \
@@ -327,10 +323,7 @@ dtb-$(CONFIG_FIH_SDM630_SDM660_PROJS) += sdm660-mtp.dtb \
 #	sdm630-headset-jacktype-no-cdp.dtb \
 #	sdm630-headset-jacktype-no-rcm.dtb \
 #	sdm630-pm660a-headset-jacktype-no-cdp.dtb \
-#	sdm630-pm660a-headset-jacktype-no-rcm.dtb \
-#	sdm455-mtp.dtb \
-#	sdm455-qrd.dtb \
-#	sdm455-cdp.dtb
+#	sdm630-pm660a-headset-jacktype-no-rcm.dtb
 
 ifeq ($(CONFIG_ARM64),y)
 always          := $(dtb-y)

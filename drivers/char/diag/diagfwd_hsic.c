@@ -328,16 +328,13 @@ static void hsic_read_complete_work_fn(struct work_struct *work)
 						 read_complete_work);
 	struct diag_hsic_buf_tbl_t *item;
 
-	do {
-		item = hsic_buf_tbl_pop(ch);
-		if (item) {
-			if (diag_remote_dev_read_done(ch->dev_id,
-						      item->buf, item->len))
-				goto fail;
-			kfree(item);
-		}
-	} while (item);
+	item = hsic_buf_tbl_pop(ch);
+	if (item) {
+		if (diag_remote_dev_read_done(ch->dev_id, item->buf, item->len))
+			goto fail;
+	}
 
+	kfree(item);
 	return;
 
 fail:

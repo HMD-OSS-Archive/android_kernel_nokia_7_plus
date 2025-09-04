@@ -2689,7 +2689,6 @@ static int dwc3_msm_vbus_notifier(struct notifier_block *nb,
 	struct extcon_dev *edev = ptr;
 	int cc_state;
 	int speed;
-	int self_powered;
 
 	if (!edev) {
 		dev_err(mdwc->dev, "%s: edev null\n", __func__);
@@ -2714,13 +2713,6 @@ static int dwc3_msm_vbus_notifier(struct notifier_block *nb,
 	dwc->maximum_speed = (speed <= 0) ? USB_SPEED_HIGH : USB_SPEED_SUPER;
 	if (dwc->maximum_speed > dwc->max_hw_supp_speed)
 		dwc->maximum_speed = dwc->max_hw_supp_speed;
-
-	self_powered = extcon_get_cable_state_(edev,
-					EXTCON_USB_TYPEC_MED_HIGH_CURRENT);
-	if (self_powered < 0)
-		dwc->gadget.is_selfpowered = 0;
-	else
-		dwc->gadget.is_selfpowered = self_powered;
 
 	mdwc->vbus_active = event;
 	if (dwc->is_drd && !mdwc->in_restart) {
@@ -3969,10 +3961,7 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				mdwc->otg_state = OTG_STATE_A_IDLE;
 				goto ret;
 			}
-			if (mdwc->no_wakeup_src_in_hostmode) {
-				pm_wakeup_event(mdwc->dev,
-					DWC3_WAKEUP_SRC_TIMEOUT);
-			}
+			pm_wakeup_event(mdwc->dev, DWC3_WAKEUP_SRC_TIMEOUT);
 		}
 		break;
 
@@ -3990,10 +3979,7 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 			dbg_event(0xFF, "XHCIResume", 0);
 			if (dwc)
 				pm_runtime_resume(&dwc->xhci->dev);
-			if (mdwc->no_wakeup_src_in_hostmode) {
-				pm_wakeup_event(mdwc->dev,
-					DWC3_WAKEUP_SRC_TIMEOUT);
-			}
+			pm_wakeup_event(mdwc->dev, DWC3_WAKEUP_SRC_TIMEOUT);
 		}
 		break;
 

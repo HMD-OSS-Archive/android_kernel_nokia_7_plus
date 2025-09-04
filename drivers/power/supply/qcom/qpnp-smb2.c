@@ -442,50 +442,6 @@ ssize_t jeita_full_capacity_show(struct device *dev, struct device_attribute *at
 static DEVICE_ATTR(jeita_full_capacity, 0644, jeita_full_capacity_show, jeita_full_capacity_store);
 // add for H/L temp charging limit reached UI }}
 
-// FIHTDC, IdaChiang, add for LCM status {{
-// 1 = screen savor ON, Ambient display ON
-// 0 = Normal LCM ON
-static ssize_t fih_lcm_status_show(struct device *dev,
-			       struct device_attribute *attr, char *buf)
-{
-	struct smb2 *chip = dev_get_drvdata(dev);
-	struct smb_charger *chg = &chip->chg;
-	bool lcm_status;
-	
-	lcm_status =  chg->is_ambient_display;
-	pr_info("fih_lcm_status_show = %x\n", lcm_status);
-	
-	return sprintf(buf, "%d\n", lcm_status);
-}
-
-static ssize_t fih_lcm_status_store(struct device *dev,
-		struct device_attribute *attr, const char
-		*buf, size_t size)
-{
-	struct smb2 *chip = dev_get_drvdata(dev);
-	struct smb_charger *chg = &chip->chg;
-	int intval =0;
-
-	sscanf(buf, "%d", &intval);
-
-	if(intval !=0 && intval !=1){
-		pr_info("%s:Invalid argument:%s\n", __func__, buf);
-		return -EINVAL;
-	}
-	if(intval == 1)
-		chg->is_ambient_display = true;
-	else
-		chg->is_ambient_display = false;
-	pr_err("[%s] fih_lcm_status:%x\n", __func__, chg->is_ambient_display);
-
-	return size;
-}
-
-static DEVICE_ATTR(lcm_status, 0644, fih_lcm_status_show, fih_lcm_status_store);
-
-
-// FIHTDC, IdaChiang, add for LCM status }}
-
 #define MAX_STEP_CHG_ENTRIES 24  //8*3 =24 
 #define MICRO_1P5A		1500000
 #define MICRO_P1A		100000
@@ -2996,10 +2952,8 @@ static int smb2_probe(struct platform_device *pdev)
 	if(chg->fih_jeita_full_capacity_enable == 1)
 		rc = device_create_file(&pdev->dev, &dev_attr_jeita_full_capacity);
 
-	rc = device_create_file(&pdev->dev, &dev_attr_otg_status); //add for Power Monitor for OTG
-	rc = device_create_file(&pdev->dev, &dev_attr_type_c_status); //add for FAP usb resistance
-	rc = device_create_file(&pdev->dev, &dev_attr_lcm_status); //add for lcm status
-	
+	rc = device_create_file(&pdev->dev, &dev_attr_otg_status); // add for Power Monitor for OTG
+	rc = device_create_file(&pdev->dev, &dev_attr_type_c_status); // add for FAP usb resistance
 	if(chg->fih_lcm_on_off_cur_control)
 	{
 		device_create_file(&pdev->dev, &dev_attr_fih_qc_control_fun_fun);
@@ -3043,9 +2997,8 @@ static int smb2_remove(struct platform_device *pdev)
 // add for H/L temp charging limit reached UI
 	if(chg->fih_jeita_full_capacity_enable == 1)
 		device_remove_file(&pdev->dev, &dev_attr_jeita_full_capacity);
-	device_remove_file(&pdev->dev, &dev_attr_otg_status); //add for Power Monitor for OTG
-	device_remove_file(&pdev->dev, &dev_attr_type_c_status); //add for FAP usb resistance
-	device_remove_file(&pdev->dev, &dev_attr_lcm_status); //add for lcm status
+	device_remove_file(&pdev->dev, &dev_attr_otg_status); // add for Power Monitor for OTG
+	device_remove_file(&pdev->dev, &dev_attr_type_c_status); // add for FAP usb resistance
 	
 	power_supply_unregister(chg->batt_psy);
 	power_supply_unregister(chg->usb_psy);

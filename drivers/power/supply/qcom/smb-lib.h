@@ -404,7 +404,6 @@ struct smb_charger {
 	bool 	fih_lcm_on_off_cur_control;
 	struct 	delayed_work	lcm_cur_ctrl_work;
 	bool 	is_lcm_on;
-	bool		is_ambient_display;
 	int 	check_cnt;
 	int 	fih_qc_control_disable_mode;
 	struct wake_lock  lcm_control_wake_lock;

@@ -16,7 +16,6 @@ enum {
     FIH_SWID_PRJ_HH6    = 10,
     FIH_SWID_PRJ_HG1    = 11,
 	FIH_SWID_PRJ_CTL    = 12,
-	FIH_SWID_PRJ_HC1    = 13,
 	FIH_SWID_PRJ_MAX
 };
 

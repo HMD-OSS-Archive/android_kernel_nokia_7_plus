@@ -666,7 +666,7 @@ void iris_cm_color_gamut_set(u32 level)
 			popt, IP_OPT_MAX, IRIS_IP_EXT,
 			0x40 + level*3 + 2, (pqlt_cur_setting->source_switch == 0) ? 0x01 : skiplast);
 	} else
-		len = iris_init_update_ipopt_t(popt, IP_OPT_MAX, IRIS_IP_DPP, 0xfe, 0xfe, (pqlt_cur_setting->source_switch == 0) ? 0x01 : skiplast);
+		iris_init_update_ipopt_t(popt,	IP_OPT_MAX, IRIS_IP_DPP, 0xfe, 0xfe, (pqlt_cur_setting->source_switch == 0) ? 0x01 : skiplast);
 
 	/*do not generate lut table for source switch.*/
 	if (pqlt_cur_setting->source_switch == 0) {
@@ -708,16 +708,22 @@ void iris_dpp_gamma_set(void)
 static int iris_lce_gamm1k_set(
 		struct iris_update_ipopt *popt, uint8_t skip_last)
 {
-	u32 dwGain, dwAHEGAMMA1K;
+	u32 dwClipUpper0, dwClipUpper1, dwClipUpper2, dwGain, dwAHEGAMMA1K, dwGamma1KUpper;
 	u32 level;
 	struct iris_update_regval regval;
+	struct iris_update_regval regval2;
+	struct iris_update_regval regval3;
 	struct quality_setting *pqlt_cur_setting = &iris_setting.quality_cur;
 	int len = 0;
 	uint32_t  *payload = NULL;
+	uint32_t  *payload2 = NULL;
+	uint32_t  *payload3 = NULL;
 
 	level = (pqlt_cur_setting->pq_setting.lcemode) * 5
 		+ pqlt_cur_setting->pq_setting.lcelevel;
 	payload = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 5);
+	payload2 = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 2);
+	payload3 = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 10);
 
 	if (pqlt_cur_setting->pq_setting.alenable == true) {
 		if (pqlt_cur_setting->luxvalue > 100000)
@@ -725,18 +731,48 @@ static int iris_lce_gamm1k_set(
 		if (pqlt_cur_setting->luxvalue < 10000)
 			pqlt_cur_setting->luxvalue = 10000;
 		dwGain = pqlt_cur_setting->luxvalue;
+		dwClipUpper0 = ((*payload2) & 0x3ff00000) >> 20;
+		dwClipUpper1 = (*payload3) & 0x000003ff;
+		dwClipUpper2 = ((*payload3) & 0x000ffc00) >> 10;
+		dwGamma1KUpper = (*payload) & 0x000007ff;
 		dwAHEGAMMA1K = ((*payload) & 0xff000000) >> 24;
 
-		dwAHEGAMMA1K =dwAHEGAMMA1K + (255 * dwGain)/100000;
+		dwClipUpper0 = (dwClipUpper0 *dwGain)/10000;
+		dwClipUpper1 = (dwClipUpper1 *dwGain)/10000;
+		dwClipUpper2 = (dwClipUpper2 *dwGain)/10000;
+		dwAHEGAMMA1K = (dwAHEGAMMA1K *dwGain)/10000;
+		dwGamma1KUpper = dwGamma1KUpper + ((1023 - dwGamma1KUpper) * dwGain)/100000;
 		regval.ip = IRIS_IP_LCE;
 		regval.opt_id = 0xfd;
 		regval.mask = 0xffffffff;
 		regval.value = ((*payload) & 0x00ffffff)|(dwAHEGAMMA1K<<24);
+		regval.value = (regval.value & 0xfffff800) | dwGamma1KUpper;
+
+		regval2.ip = IRIS_IP_LCE;
+		regval2.opt_id = 0xfc;
+		regval2.mask = 0xffffffff;
+		regval2.value = ((*payload2) & 0xc00fffff)|(dwClipUpper0<<20);
+
+		regval3.ip = IRIS_IP_LCE;
+		regval3.opt_id = 0xfb;
+		regval3.mask = 0xffffffff;
+		regval3.value = ((*payload3) & 0xfff003ff)|(dwClipUpper2<<10);
+		regval3.value = (regval3.value & 0xfffffc00) | dwClipUpper1;
 
 		iris_update_bitmask_regval_nonread(&regval, false);
 		len = iris_init_update_ipopt_t(
 			popt, IP_OPT_MAX, IRIS_IP_LCE,
-			0xfd, 0xfd, skip_last);
+			0xfd, 0xfd, 0x01);
+
+		iris_update_bitmask_regval_nonread(&regval2, false);
+		len = iris_init_update_ipopt_t(
+			popt, IP_OPT_MAX, IRIS_IP_LCE,
+			0xfc, 0xfc, 0x01);
+
+		iris_update_bitmask_regval_nonread(&regval3, false);
+		len = iris_init_update_ipopt_t(
+			popt, IP_OPT_MAX, IRIS_IP_LCE,
+			0xfb, 0xfb, skip_last);
 	}
 	pr_err("lux value=%d\n", pqlt_cur_setting->luxvalue);
 	return len;
@@ -747,14 +783,20 @@ static int iris_lce_gamm1k_restore(
 {
 	u32 level;
 	struct iris_update_regval regval;
+	struct iris_update_regval regval2;
+	struct iris_update_regval regval3;
 	struct quality_setting *pqlt_cur_setting = &iris_setting.quality_cur;
 	int len = 0;
 	uint32_t  *payload = NULL;
+	uint32_t  *payload2 = NULL;
+	uint32_t  *payload3 = NULL;
 
 
 	level = (pqlt_cur_setting->pq_setting.lcemode) * 5
 				+ pqlt_cur_setting->pq_setting.lcelevel;
 	payload = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 5);
+	payload2 = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 2);
+	payload3 = iris_get_ipopt_payload_data(IRIS_IP_LCE, level, 10);
 
 	regval.ip = IRIS_IP_LCE;
 	regval.opt_id = 0xfd;
@@ -763,7 +805,25 @@ static int iris_lce_gamm1k_restore(
 	iris_update_bitmask_regval_nonread(&regval, false);
 	len = iris_init_update_ipopt_t(
 			popt, IP_OPT_MAX, IRIS_IP_LCE,
-			0xfd, 0xfd, skip_last);
+			0xfd, 0xfd, 0x01);
+
+	regval2.ip = IRIS_IP_LCE;
+	regval2.opt_id = 0xfc;
+	regval2.mask = 0xffffffff;
+	regval2.value = *payload2;
+	iris_update_bitmask_regval_nonread(&regval2, false);
+	len = iris_init_update_ipopt_t(
+			popt, IP_OPT_MAX, IRIS_IP_LCE,
+			0xfc, 0xfc, 0x01);
+
+	regval3.ip = IRIS_IP_LCE;
+	regval3.opt_id = 0xfb;
+	regval3.mask = 0xffffffff;
+	regval3.value = *payload3;
+	iris_update_bitmask_regval_nonread(&regval3, false);
+	len = iris_init_update_ipopt_t(
+			popt, IP_OPT_MAX, IRIS_IP_LCE,
+			0xfb, 0xfb, skip_last);
 
 	pr_err("%s, len = %d\n", __func__, len);
 	return len;
@@ -1133,7 +1193,6 @@ void iris_sdr2hdr_level_set(u32 level)
 	bool skiplast = 0;
 	bool dma_sent = false;
 	struct iris_cfg *pcfg = iris_get_cfg();
-	u32 gammalevel;
 
 	// Don't set sdr2hdr level.
 	if (iris_sdr2hdr_mode == 2 && level == SDR709_2_p3)
@@ -1259,18 +1318,6 @@ void iris_sdr2hdr_level_set(u32 level)
 	len = iris_init_update_ipopt_t(popt, IP_OPT_MAX, IRIS_IP_CM,
 			0xfc, 0xfc, 0x01);
 
-	if (pqlt_cur_setting->source_switch == 1) {
-		/*use liner gamma if cm lut disable*/
-		if (pqlt_cur_setting->pq_setting.cmcolortempmode ==
-			IRIS_COLOR_TEMP_OFF)
-			gammalevel = 0;
-		else
-			gammalevel = pqlt_cur_setting->pq_setting.cmcolorgamut + 1;
-
-
-		iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_EXT, 0xE0 + gammalevel, 0x01);
-		len = iris_init_update_ipopt_t(popt,  IP_OPT_MAX, IRIS_IP_DPP, 0xfe, 0xfe, 0x01);
-	}
 	if (iris_yuv_datapath == true)
 		peaking_csc = 0x11;
 	else {
