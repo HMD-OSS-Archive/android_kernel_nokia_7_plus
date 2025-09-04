@@ -480,6 +480,7 @@ struct drv2605L_data {
     struct hrtimer timer;
     struct mutex lock;
     struct work_struct vibrator_work;
+    struct work_struct vibrator_pattern_work;
     unsigned char sequence[WAVEFORM_SEQUENCER_MAX];
     volatile int should_stop;
 	struct timed_output_dev to_dev;	
@@ -491,4 +492,6 @@ struct drv2605L_data {
 static void vibrator_pattern_enable_peek(struct drv2605L_data *pDrv2605Ldata);
 static void vibrator_pattern_enable_peek2(struct drv2605L_data *pDrv2605Ldata);
 static void vibrator_set_normal_vibration_B2N(struct drv2605L_data *pDrv2605Ldata);
+int vibrator_get_pattern_value(void);
+void vibrator_set_pattern_value(int value);
 #endif

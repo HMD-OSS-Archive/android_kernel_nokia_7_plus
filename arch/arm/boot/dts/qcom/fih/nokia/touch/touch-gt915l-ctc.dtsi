@@ -100,7 +100,7 @@
       goodix,slide-wakeup = <1>; /*Support DoubleTap*/
       goodix,type-a-report = <0>;
       goodix,driver-send-cfg = <0>;
-      goodix,resume-in-workqueue = <1>;
+      goodix,resume-in-workqueue = <0>;
       goodix,int-sync = <1>;
       goodix,swap-x2y = <0>;
       goodix,esd-protect = <1>;

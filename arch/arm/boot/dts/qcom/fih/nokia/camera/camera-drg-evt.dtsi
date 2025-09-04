@@ -218,15 +218,17 @@
 };
 
 /*Modify Torch current*/
+/*white*/
 &pm660l_torch0 {
 	qcom,max-current = <350>;
-	qcom,current-ma = <40>;
+	qcom,current-ma = <160>;
 	qcom,ires-ua = <10000>;
 };
 
+/*amber*/
 &pm660l_torch1 {
 	qcom,max-current = <350>;
-	qcom,current-ma = <160>;
+	qcom,current-ma = <40>;
 	qcom,ires-ua = <10000>;
 };
 

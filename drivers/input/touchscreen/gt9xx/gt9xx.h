@@ -172,6 +172,7 @@ struct goodix_ts_data {
     struct goodix_fw_info fw_info;
     bool force_update;
     bool init_done;
+    unsigned long timestamp;
 };
 
 /************************* PART2:TODO define *******************************/

@@ -5234,16 +5234,32 @@ static void lcm_cur_ctrl_work(struct work_struct *work)
 
 		if((chip->is_lcm_on))
 		{
-			if(cable_voltage >= FIH_LCM_VBUS_THRESHOLD)
+			if(chip->is_ambient_display == false)
 			{
-				if(stat)
+				if(cable_voltage >= FIH_LCM_VBUS_THRESHOLD)
 				{
-					smblib_masked_write(chip, USBIN_OPTIONS_1_CFG_REG, HVDCP_EN_BIT, 0);
-					sts_change = true;
+					if(stat)
+					{
+						smblib_masked_write(chip, USBIN_OPTIONS_1_CFG_REG, HVDCP_EN_BIT, 0);
+						sts_change = true;
+					}
 				}
+				if(ICL != FIH_LCM_ICL_MIN)
+					vote(chip->usb_icl_votable, LCM_LIMIT_ICL_VOTER, true, FIH_LCM_ICL_MIN);
 			}
-			if(ICL != FIH_LCM_ICL_MIN)
-				vote(chip->usb_icl_votable, LCM_LIMIT_ICL_VOTER, true, FIH_LCM_ICL_MIN);
+			else
+			{
+				if(cable_voltage < FIH_LCM_VBUS_THRESHOLD)
+				{
+					if(!stat)
+					{
+						smblib_masked_write(chip, USBIN_OPTIONS_1_CFG_REG, HVDCP_EN_BIT, HVDCP_EN_BIT);
+						sts_change = true;
+					}
+				}
+				if(ICL != FIH_LCM_ICL_MAX)
+					vote(chip->usb_icl_votable, LCM_LIMIT_ICL_VOTER, true, FIH_LCM_ICL_MAX);
+			}
 		}
 		else if(!chip->is_lcm_on)
 		{
@@ -5746,6 +5762,7 @@ int smblib_init(struct smb_charger *chg)
 	chg->fake_capacity = -EINVAL;
 	chg->fake_input_current_limited = -EINVAL;
 
+	chg->is_ambient_display = false;
 	if(chg->fih_lcm_on_off_cur_control)
 	{
 		wake_lock_init(&chg->lcm_control_wake_lock, WAKE_LOCK_SUSPEND, "lcm_ctrl_wake_lock");

@@ -133,10 +133,12 @@
 };
 
 /*Modify Torch current*/
+/*amber*/
 &pm660l_torch0 {
 	qcom,current-ma = <40>;
 };
 
+/*white*/
 &pm660l_torch1 {
 	qcom,current-ma = <160>;
 };
