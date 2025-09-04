@@ -128,9 +128,3 @@
 		qcom,latency-level = "regular";
 	};
 };
-
-&soc {
-	pcm_noirq: qcom,msm-pcm-dsp-noirq {
-		qcom,latency-level = "regular";
-	};
-};

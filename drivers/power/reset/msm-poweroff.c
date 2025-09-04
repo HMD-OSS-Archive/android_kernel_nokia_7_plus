@@ -100,11 +100,11 @@ struct reset_attribute {
 	static struct reset_attribute reset_attr_##_name = \
 			__ATTR(_name, _mode, _show, _store)
 
-static int __init oem_dload_set(char *str);//20151105, AlanChiu@FIH ramdump set by fastboot 
+static int __init oem_dload_set(char *str);
 
 module_param_call(download_mode, dload_set, param_get_int,
 			&download_mode, 0644);
-__setup("download_mode=", oem_dload_set);//20151105, AlanChiu@FIH ramdump set by fastboot oem command			
+__setup("download_mode=", oem_dload_set);
 			
 static int panic_prep_restart(struct notifier_block *this,
 			      unsigned long event, void *ptr)
@@ -211,7 +211,7 @@ static int dload_set(const char *val, struct kernel_param *kp)
 
 	return 0;
 }
-//20151105, AlanChiu@FIH ramdump set by fastboot oem command
+
 static int __init oem_dload_set(char *str)
 {
     int old_val = download_mode; 
