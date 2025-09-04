@@ -53,6 +53,7 @@
 #define FTS_I2C_VTG_MIN_UV                  1800000
 #define FTS_I2C_VTG_MAX_UV                  1800000
 #endif
+#define FTS_POWER_GPIO                      61
 
 /*****************************************************************************
 * Global variable or extern global variabls/functions
@@ -72,6 +73,8 @@ extern void touch_vendor_read_8719(char *);
 extern struct fih_touch_cb touch_cb;
 char *fw_app_bin_8719;
 char *tp_ini_8719;
+extern int gdouble_tap_enable;
+static int gLcmOnOff = 0;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
@@ -243,7 +246,7 @@ void fts_tp_state_recovery_8719(struct i2c_client *client)
     fts_ex_mode_recovery_8719(client);
     /* recover TP gesture state 0xD0 */
 #if FTS_GESTURE_EN
-    fts_gesture_recovery(client);
+    fts_gesture_recovery_8719(client);
 #endif
     FTS_FUNC_EXIT();
 }
@@ -775,7 +778,7 @@ static int fts_read_touchdata(struct fts_ts_data *data)
     struct i2c_client *client = data->client;
 
 #if FTS_GESTURE_EN
-    if (0 == fts_gesture_readdata(data)) {
+    if (0 == fts_gesture_readdata_8719(data)) {
         FTS_INFO("succuss to get gesture data in irq handler");
         return 1;
     }
@@ -885,7 +888,7 @@ static irqreturn_t fts_ts_interrupt(int irq, void *data)
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_set_intr(1);
+    fts_esdcheck_set_intr_8719(1);
 #endif
 
     ret = fts_read_touchdata(ts_data);
@@ -896,7 +899,7 @@ static irqreturn_t fts_ts_interrupt(int irq, void *data)
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_set_intr(0);
+    fts_esdcheck_set_intr_8719(0);
 #endif
 
     return IRQ_HANDLED;
@@ -1068,6 +1071,10 @@ static int fts_gpio_configure(struct fts_ts_data *data)
             goto err_reset_gpio_dir;
         }
     }
+
+	if (gpio_is_valid(FTS_POWER_GPIO)) {
+		gpio_set_value(FTS_POWER_GPIO, 1);
+	}
 
     FTS_FUNC_EXIT();
     return 0;
@@ -1243,10 +1250,14 @@ static int fb_notifier_callback(struct notifier_block *self,
     if (evdata && evdata->data && event == FB_EVENT_BLANK &&
         fts_data && fts_data->client) {
         blank = evdata->data;
-        if (*blank == FB_BLANK_UNBLANK)
+        if (*blank == FB_BLANK_UNBLANK) {
             fts_ts_resume(&fts_data->client->dev);
-        else if (*blank == FB_BLANK_POWERDOWN)
-            fts_ts_suspend(&fts_data->client->dev);
+            gLcmOnOff = 1;
+        }
+        else if (*blank == FB_BLANK_POWERDOWN) {
+            //fts_ts_suspend(&fts_data->client->dev);
+            gLcmOnOff = 0;
+        }
     }
 
     return 0;
@@ -1285,6 +1296,30 @@ static void fts_ts_late_resume(struct early_suspend *handler)
 }
 #endif
 
+int touch_double_tap_read_focaltech_8719(void)
+{
+	pr_debug("%s, gdouble_tap_enable = %d", __func__, gdouble_tap_enable);
+
+	return gdouble_tap_enable;
+}
+int touch_double_tap_write_focaltech_8719(int enable)
+{
+	pr_info( "%s: set gdouble_tap_enable = %d", __func__, enable);
+
+	if (!gLcmOnOff)
+	{
+		pr_err("[HL]%s: LCM is OFF! Not Allow To Modify Double Tap Value!\n", __func__);
+		return -1;
+	}
+	else
+	{
+		pr_debug("[HL]%s: LCM is ON! Allow To Modify Double Tap Value!\n", __func__);
+	}
+
+	gdouble_tap_enable = enable;
+
+	return 0;
+}
 /*****************************************************************************
 *  Name: fts_ts_probe
 *  Brief:
@@ -1343,6 +1378,11 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	fts_input_dev_8719 = input_dev;
     ts_data->pdata = pdata;
     i2c_set_clientdata(client, ts_data);
+	fts_data->rbuf = (u8 *)kmalloc(256, GFP_KERNEL);
+	if (fts_data->rbuf == NULL) {
+		FTS_ERROR("failed to allocated memory for fts_data->rbuf\n");
+		return -ENOMEM;
+	}
 
     ts_data->ts_workqueue = create_singlethread_workqueue("fts_wq");
     if (NULL == ts_data->ts_workqueue) {
@@ -1423,7 +1463,7 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
     }
 
 #if FTS_GESTURE_EN
-    ret = fts_gesture_init(ts_data);
+    ret = fts_gesture_init_8719(ts_data);
     if (ret) {
         FTS_ERROR("init gesture fail");
     }
@@ -1437,7 +1477,7 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 #endif
 
 #if FTS_ESDCHECK_EN
-    ret = fts_esdcheck_init(ts_data);
+    ret = fts_esdcheck_init_8719(ts_data);
     if (ret) {
         FTS_ERROR("init esd check fail");
     }
@@ -1477,8 +1517,8 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
     touch_cb.touch_fwupgrade = touch_fwupgrade_8719;
     touch_cb.touch_fwupgrade_read = touch_fwupgrade_read_8719;
     touch_cb.touch_vendor_read = touch_vendor_read_8719;
-    //touch_cb.touch_double_tap_read = touch_double_tap_read_focaltech;
-    //touch_cb.touch_double_tap_write = touch_double_tap_write_focaltech;
+    touch_cb.touch_double_tap_read = touch_double_tap_read_focaltech_8719;
+    touch_cb.touch_double_tap_write = touch_double_tap_write_focaltech_8719;
     //touch_cb.touch_alt_rst = fts_fih_tp_rst;
     //touch_cb.touch_alt_st_count = read_register_result;
     //touch_cb.touch_alt_st_enable = fts_fih_tp_enable;
@@ -1501,6 +1541,7 @@ err_power_ctrl:
 err_power_init:
 #endif
     kfree_safe(ts_data->point_buf);
+	kfree(fts_data->rbuf);
     kfree_safe(ts_data->events);
     input_unregister_device(ts_data->input_dev);
 err_input_init:
@@ -1548,11 +1589,11 @@ static int fts_ts_remove(struct i2c_client *client)
 #endif
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_exit(ts_data);
+    fts_esdcheck_exit_8719(ts_data);
 #endif
 
 #if FTS_GESTURE_EN
-    fts_gesture_exit(client);
+    fts_gesture_exit_8719(client);
 #endif
 
 #if defined(CONFIG_FB)
@@ -1583,6 +1624,7 @@ static int fts_ts_remove(struct i2c_client *client)
 #endif
 
     kfree_safe(ts_data->point_buf);
+	kfree(fts_data->rbuf);
     kfree_safe(ts_data->events);
 
     devm_kfree(&client->dev, ts_data);
@@ -1604,6 +1646,11 @@ static int fts_ts_suspend(struct device *dev)
     struct fts_ts_data *ts_data = dev_get_drvdata(dev);
 
     FTS_FUNC_ENTER();
+	if (!ts_data) {
+        FTS_INFO("ts_data is null");
+        return 0;
+	}
+
     if (ts_data->suspended) {
         FTS_INFO("Already in suspend state");
         return 0;
@@ -1615,14 +1662,18 @@ static int fts_ts_suspend(struct device *dev)
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_suspend();
+    fts_esdcheck_suspend_8719();
 #endif
 
 #if FTS_GESTURE_EN
-    if (fts_gesture_suspend(ts_data->client) == 0) {
+    if (fts_gesture_suspend_8719(ts_data->client) == 0) {
         ts_data->suspended = true;
+
+        /* zhouying add for TAS-1149 20190109 */
+        //msleep(5);
+        fts_release_all_finger();
         return 0;
-    }
+	}
 #endif
 
     fts_irq_disable_8719();
@@ -1640,6 +1691,10 @@ static int fts_ts_suspend(struct device *dev)
     ret = fts_i2c_write_reg_8719(ts_data->client, FTS_REG_POWER_MODE, FTS_REG_POWER_MODE_SLEEP_VALUE);
     if (ret < 0)
         FTS_ERROR("set TP to sleep mode fail, ret=%d", ret);
+
+    /* zhouying add for TAS-1149 20190109 */
+    //msleep(5);
+    fts_release_all_finger();
 #endif
 
     ts_data->suspended = true;
@@ -1649,8 +1704,10 @@ static int fts_ts_suspend(struct device *dev)
 //ZZDC-snow-Touch-20170809
 void fts_tp_lcm_suspend_8719(void)
 {
-	 fts_ts_suspend(&fts_i2c_client_8719->dev);
-	 pr_info("F@TOUCH %s sleep start\n",__func__);
+	 if (tp_probe_success) {
+		fts_ts_suspend(&fts_i2c_client_8719->dev);
+		pr_info("F@TOUCH %s sleep start\n",__func__);
+	 }
 }
 EXPORT_SYMBOL(fts_tp_lcm_suspend_8719);
 /*****************************************************************************
@@ -1665,6 +1722,11 @@ static int fts_ts_resume(struct device *dev)
     struct fts_ts_data *ts_data = dev_get_drvdata(dev);
 
     FTS_FUNC_ENTER();
+	if (!ts_data) {
+        FTS_INFO("ts_data is null");
+        return 0;
+	}
+
     if (!ts_data->suspended) {
         FTS_DEBUG("Already in awake state");
         return 0;
@@ -1686,11 +1748,11 @@ static int fts_ts_resume(struct device *dev)
     fts_tp_state_recovery_8719(ts_data->client);
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_resume();
+    fts_esdcheck_resume_8719();
 #endif
 
 #if FTS_GESTURE_EN
-    if (fts_gesture_resume(ts_data->client) == 0) {
+    if (fts_gesture_resume_8719(ts_data->client) == 0) {
         ts_data->suspended = false;
         return 0;
     }

@@ -148,6 +148,7 @@ struct fts_ts_data {
     /* multi-touch */
     struct ts_event *events;
     u8 *point_buf;
+	u8 *rbuf;
     int pnt_buf_size;
     int touchs;
     bool key_down;
@@ -188,12 +189,12 @@ int fts_i2c_exit_8719(void);
 
 /* Gesture functions */
 #if FTS_GESTURE_EN
-int fts_gesture_init(struct fts_ts_data *ts_data);
-int fts_gesture_exit(struct i2c_client *client);
-void fts_gesture_recovery(struct i2c_client *client);
-int fts_gesture_readdata(struct fts_ts_data *ts_data);
-int fts_gesture_suspend(struct i2c_client *i2c_client);
-int fts_gesture_resume(struct i2c_client *client);
+int fts_gesture_init_8719(struct fts_ts_data *ts_data);
+int fts_gesture_exit_8719(struct i2c_client *client);
+void fts_gesture_recovery_8719(struct i2c_client *client);
+int fts_gesture_readdata_8719(struct fts_ts_data *ts_data);
+int fts_gesture_suspend_8719(struct i2c_client *i2c_client);
+int fts_gesture_resume_8719(struct i2c_client *client);
 #endif
 
 /* Apk and functions */
@@ -210,13 +211,13 @@ int fts_remove_sysfs_8719(struct i2c_client *client);
 
 /* ESD */
 #if FTS_ESDCHECK_EN
-int fts_esdcheck_init(struct fts_ts_data *ts_data);
-int fts_esdcheck_exit(struct fts_ts_data *ts_data);
-int fts_esdcheck_switch(bool enable);
-int fts_esdcheck_proc_busy(bool proc_debug);
-int fts_esdcheck_set_intr(bool intr);
-int fts_esdcheck_suspend(void);
-int fts_esdcheck_resume(void);
+int fts_esdcheck_init_8719(struct fts_ts_data *ts_data);
+int fts_esdcheck_exit_8719(struct fts_ts_data *ts_data);
+int fts_esdcheck_switch_8719(bool enable);
+int fts_esdcheck_proc_busy_8719(bool proc_debug);
+int fts_esdcheck_set_intr_8719(bool intr);
+int fts_esdcheck_suspend_8719(void);
+int fts_esdcheck_resume_8719(void);
 #endif
 
 /* Production test */

@@ -287,14 +287,14 @@
 /*white*/
 &pm660l_torch0 {
 	qcom,max-current = <350>;
-	qcom,current-ma = <160>;
+	qcom,current-ma = <50>;
 	qcom,ires-ua = <10000>;
 };
 
 /*amber*/
 &pm660l_torch1 {
 	qcom,max-current = <350>;
-	qcom,current-ma = <40>;
+	qcom,current-ma = <50>;
 	qcom,ires-ua = <10000>;
 };
 
@@ -600,6 +600,7 @@
 		compatible = "qcom,camera";
 		reg = <0x03>;
 		qcom,special-support-sensors = "hi846";
+		qcom,led-flash-src = <&led_flash0>;
 		qcom,csiphy-sd-index = <0>;
 		qcom,csid-sd-index = <0>;
 		qcom,mount-angle = <90>;

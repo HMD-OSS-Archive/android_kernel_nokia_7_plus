@@ -88,7 +88,7 @@ int fts_i2c_read_8719(struct i2c_client *client, char *writebuf, int writelen, c
                     .addr = client->addr,
                     .flags = I2C_M_RD,
                     .len = readlen,
-                    .buf = readbuf,
+                    .buf = fts_data->rbuf,
                 },
             };
             for (i = 0; i < I2C_RETRY_NUMBER; i++) {
@@ -104,7 +104,7 @@ int fts_i2c_read_8719(struct i2c_client *client, char *writebuf, int writelen, c
                     .addr = client->addr,
                     .flags = I2C_M_RD,
                     .len = readlen,
-                    .buf = readbuf,
+                    .buf = fts_data->rbuf,
                 },
             };
             for (i = 0; i < I2C_RETRY_NUMBER; i++) {
@@ -116,7 +116,7 @@ int fts_i2c_read_8719(struct i2c_client *client, char *writebuf, int writelen, c
             }
         }
     }
-
+	memcpy(readbuf, fts_data->rbuf, readlen);
     mutex_unlock(&i2c_rw_access);
     return ret;
 }
@@ -134,13 +134,14 @@ int fts_i2c_write_8719(struct i2c_client *client, char *writebuf, int writelen)
     int i = 0;
 
     mutex_lock(&i2c_rw_access);
+	memcpy(fts_data->rbuf, writebuf, writelen);
     if (writelen > 0) {
         struct i2c_msg msgs[] = {
             {
                 .addr = client->addr,
                 .flags = 0,
                 .len = writelen,
-                .buf = writebuf,
+                .buf = fts_data->rbuf,
             },
         };
         for (i = 0; i < I2C_RETRY_NUMBER; i++) {

@@ -50,6 +50,6 @@
 #include "touch/touch-gt915l-ctc-drgch14.dtsi"
 
 /* LCM */
-#include "display/dsi-panel-fih-ft8719-1080p-video.dtsi"
 #include "display/dsi-panel-fih-ctc-otm1911a-fhd-video.dtsi"
 #include "display/dsi-panel-fih-auo-otm1911a-fhd-video.dtsi"
+#include "display/dsi-panel-fih-ft8719-1080p-video.dtsi"

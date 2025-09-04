@@ -1308,13 +1308,13 @@ static ssize_t fts_test_store(struct device *dev, struct device_attribute *attr,
     disable_irq(ts_data->irq);
 
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
 
     fts_test_entry_8719(fwname);
 
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
 
     enable_irq(ts_data->irq);
@@ -1383,12 +1383,12 @@ void touch_selftest_8719(void)
     disable_irq(client->irq);
 
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
     fts_test_entry_8719( fwname);
 
 #if defined(FTS_ESDCHECK_EN) && (FTS_ESDCHECK_EN)
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
     enable_irq(client->irq);
 

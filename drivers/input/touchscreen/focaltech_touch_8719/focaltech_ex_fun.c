@@ -113,9 +113,9 @@ static ssize_t fts_debug_write(struct file *filp, const char __user *buff, size_
         FTS_INFO("[APK]: PROC_SET_TEST_FLAG = %x!!", writebuf[1]);
 #if FTS_ESDCHECK_EN
         if (writebuf[1] == 0) {
-            fts_esdcheck_switch(ENABLE);
+            fts_esdcheck_switch_8719(ENABLE);
         } else {
-            fts_esdcheck_switch(DISABLE);
+            fts_esdcheck_switch_8719(DISABLE);
         }
 #endif
         break;
@@ -195,7 +195,7 @@ static ssize_t fts_debug_read(struct file *filp, char __user *buff, size_t count
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
 
     switch (ts_data->proc_opmode) {
@@ -204,7 +204,7 @@ static ssize_t fts_debug_read(struct file *filp, char __user *buff, size_t count
         ret = fts_i2c_read_8719(client, NULL, 0, buf, readlen);
         if (ret < 0) {
 #if FTS_ESDCHECK_EN
-            fts_esdcheck_proc_busy(0);
+            fts_esdcheck_proc_busy_8719(0);
 #endif
             FTS_ERROR("[APK]: read iic error!!");
             return ret;
@@ -216,7 +216,7 @@ static ssize_t fts_debug_read(struct file *filp, char __user *buff, size_t count
         ret = fts_i2c_read_8719(client, NULL, 0, buf, readlen);
         if (ret < 0) {
 #if FTS_ESDCHECK_EN
-            fts_esdcheck_proc_busy(0);
+            fts_esdcheck_proc_busy_8719(0);
 #endif
             FTS_ERROR("[APK]: read iic error!!");
             return ret;
@@ -231,7 +231,7 @@ static ssize_t fts_debug_read(struct file *filp, char __user *buff, size_t count
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
 
     if (copy_to_user(buff, buf, num_read_chars)) {
@@ -284,9 +284,9 @@ static int fts_debug_write(struct file *filp,
         FTS_DEBUG("[APK]: PROC_SET_TEST_FLAG = %x!!", writebuf[1]);
 #if FTS_ESDCHECK_EN
         if (writebuf[1] == 0) {
-            fts_esdcheck_switch(ENABLE);
+            fts_esdcheck_switch_8719(ENABLE);
         } else {
-            fts_esdcheck_switch(DISABLE);
+            fts_esdcheck_switch_8719(DISABLE);
         }
 #endif
         break;
@@ -369,7 +369,7 @@ static int fts_debug_read( char *page, char **start,
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
     switch (ts_data->proc_opmode) {
     case PROC_READ_REGISTER:
@@ -377,7 +377,7 @@ static int fts_debug_read( char *page, char **start,
         ret = fts_i2c_read_8719(client, NULL, 0, buf, readlen);
         if (ret < 0) {
 #if FTS_ESDCHECK_EN
-            fts_esdcheck_proc_busy(0);
+            fts_esdcheck_proc_busy_8719(0);
 #endif
             FTS_ERROR("[APK]: read iic error!!");
             return ret;
@@ -389,7 +389,7 @@ static int fts_debug_read( char *page, char **start,
         ret = fts_i2c_read_8719(client, NULL, 0, buf, readlen);
         if (ret < 0) {
 #if FTS_ESDCHECK_EN
-            fts_esdcheck_proc_busy(0);
+            fts_esdcheck_proc_busy_8719(0);
 #endif
             FTS_ERROR("[APK]: read iic error!!");
             return ret;
@@ -404,7 +404,7 @@ static int fts_debug_read( char *page, char **start,
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
 
     memcpy(page, buf, num_read_chars);
@@ -523,13 +523,13 @@ static ssize_t fts_tpfwver_show(struct device *dev, struct device_attribute *att
     mutex_lock(&input_dev->mutex);
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
     if (fts_i2c_read_reg_8719(client, FTS_REG_FW_VER, &fwver) < 0) {
         num_read_chars = snprintf(buf, PAGE_SIZE, "I2c transfer error!\n");
     }
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
     if ((fwver == 0xFF) || (fwver == 0x00))
         num_read_chars = snprintf(buf, PAGE_SIZE, "get tp fw version fail!\n");
@@ -745,7 +745,7 @@ static ssize_t fts_tprwreg_store(struct device *dev, struct device_attribute *at
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
     if (rw_op.len < 0) {
         FTS_ERROR("cmd buffer error!");
@@ -791,7 +791,7 @@ static ssize_t fts_tprwreg_store(struct device *dev, struct device_attribute *at
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
     mutex_unlock(&input_dev->mutex);
 
@@ -826,13 +826,13 @@ static ssize_t fts_fwupgradebin_store(struct device *dev, struct device_attribut
     ts_data->fw_loading = 1;
     fts_irq_disable_8719();
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
 
     fts_upgrade_bin(client, fwname, 0);
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
     fts_irq_enable_8719();
     ts_data->fw_loading = 0;
@@ -869,13 +869,13 @@ static ssize_t fts_fwforceupg_store(struct device *dev, struct device_attribute 
     ts_data->fw_loading = 1;
     fts_irq_disable_8719();
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
 
     fts_upgrade_bin(client, fwname, 1);
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
     fts_irq_enable_8719();
     ts_data->fw_loading = 0;
@@ -934,7 +934,7 @@ static ssize_t fts_dumpreg_show(struct device *dev, struct device_attribute *att
 
     mutex_lock(&input_dev->mutex);
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
     fts_i2c_read_reg_8719(client, FTS_REG_POWER_MODE, &val);
     count += snprintf(buf + count, PAGE_SIZE, "Power Mode:0x%02x\n", val);
@@ -969,7 +969,7 @@ static ssize_t fts_dumpreg_show(struct device *dev, struct device_attribute *att
     fts_i2c_read_reg_8719(client, FTS_REG_FLOW_WORK_CNT, &val);
     count += snprintf(buf + count, PAGE_SIZE, "ESD count:0x%02x\n", val);
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
 
     mutex_unlock(&input_dev->mutex);
@@ -1061,14 +1061,14 @@ void touch_tpfwver_read_8719(char *fw_ver)
     mutex_lock(&fts_input_dev_8719->mutex);
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(1);
+    fts_esdcheck_proc_busy_8719(1);
 #endif
     if (fts_i2c_read_reg_8719(fts_i2c_client_8719, FTS_REG_FW_VER, &fwver) < 0)
     {
         num_read_chars = snprintf(fw_ver, PAGE_SIZE,"I2c transfer error!\n");
     }
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_proc_busy(0);
+    fts_esdcheck_proc_busy_8719(0);
 #endif
     if (fwver == 255)
         num_read_chars = snprintf(fw_ver, PAGE_SIZE,"get tp fw version fail!\n");
@@ -1098,7 +1098,7 @@ void touch_fwupgrade_8719(int input)
     mutex_lock(&fts_input_dev_8719->mutex);
     fts_irq_disable_8719();
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
     if (input > 1)
     {
@@ -1111,7 +1111,7 @@ void touch_fwupgrade_8719(int input)
     //if (fts_updatefun_curr.upgrade_with_app_bin_file)
     //    fw_upgrade_flag = fts_updatefun_curr.upgrade_with_app_bin_file(fts_i2c_client_8719, fwname);
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
     fts_irq_enable_8719();
     mutex_unlock(&fts_input_dev_8719->mutex);

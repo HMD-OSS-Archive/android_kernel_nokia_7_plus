@@ -80,6 +80,17 @@
 #define REG_WR_ACCESS					1 << 1
 #define AW2015_REG_MAX					0x7F
 
+enum aw2015_led_mode {
+	FLASH_NONE = 0,
+	FLASH_URGENT = 3,
+	FLASH_ALERT,
+	FLASH_SINGLE,
+	FLASH_USUAL,
+	FLASH_ALWAYSON,
+};
+
+static int aw2015_led_mode_val = -1;
+
 const unsigned char aw2015_reg_access[AW2015_REG_MAX] = {
 	[AW2015_REG_RESET]   = REG_RD_ACCESS|REG_WR_ACCESS,
 	[AW2015_REG_GCR]     = REG_RD_ACCESS|REG_WR_ACCESS,
@@ -429,6 +440,7 @@ static void aw2015_brightness_work(struct work_struct *work)
 	} else {
         aw2015_read(led, AW2015_REG_LEDEN, &val);
 		aw2015_write(led, AW2015_REG_LEDEN, val & (~(1 << led->id)));
+		aw2015_led_mode_val = FLASH_NONE;
 	}
 
 	/*
@@ -475,6 +487,7 @@ static void aw2015_led_blink_set(struct aw2015_led *led, unsigned long blinking)
 	} else {
 		aw2015_read(led, AW2015_REG_LEDEN, &val);
 		aw2015_write(led, AW2015_REG_LEDEN, val & (~(1 << led->id)));
+		aw2015_led_mode_val = FLASH_NONE;
 	}
 
 	/*
@@ -635,26 +648,31 @@ static ssize_t aw2015_pattern_store(struct device *dev,
     }
 
     if (0 == strcmp(str,"urgent")) {
+		aw2015_led_mode_val = FLASH_URGENT;
 		size = sizeof(urgent)/sizeof(struct aw2015_pattern);
 		for (i = 0; i < size; i++) {
 			aw2015_write(led, urgent[i].reg, urgent[i].val);
 		}
 	}else if (0 == strcmp(str,"alert")) {
+		aw2015_led_mode_val = FLASH_ALERT;
 		size = sizeof(alert)/sizeof(struct aw2015_pattern);
 		for (i = 0; i < size; i++) {
 			aw2015_write(led, alert[i].reg, alert[i].val);
 		}
 	}else if (0 == strcmp(str,"singletime")) {
+		aw2015_led_mode_val = FLASH_SINGLE;
 		size = sizeof(single_time)/sizeof(struct aw2015_pattern);
 		for (i = 0; i < size; i++) {
 			aw2015_write(led, single_time[i].reg, single_time[i].val);
 		}
 	}else if (0 == strcmp(str,"usual")) {
+		aw2015_led_mode_val = FLASH_USUAL;
 		size = sizeof(usual)/sizeof(struct aw2015_pattern);
 		for (i = 0; i < size; i++) {
 			aw2015_write(led, usual[i].reg, usual[i].val);
 		}
 	}else if (0 == strcmp(str,"alwayson")) {
+		aw2015_led_mode_val = FLASH_ALWAYSON;
 		size = sizeof(always_on)/sizeof(struct aw2015_pattern);
 		for (i = 0; i < size; i++) {
 			aw2015_write(led, always_on[i].reg, always_on[i].val);
@@ -665,11 +683,75 @@ static ssize_t aw2015_pattern_store(struct device *dev,
 	return len;
 }
 
+static ssize_t aw2015_enviroment_brightest_store(struct device *dev,
+			     struct device_attribute *attr,
+			     const char *buf, size_t len)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct aw2015_led *led =
+			container_of(led_cdev, struct aw2015_led, cdev);
+    int rc = 0;
+    char str[20+1];
+	int env_val = 2;
+
+	rc = parse_string(buf, str);
+	if (rc < 0){
+        dev_info(&led->client->dev,"%s,the enviroment is too long",__func__);
+        return rc;
+    }
+
+	dev_info(&led->client->dev,"%s,the enviroment %s",__func__,str);
+
+	if (0 == strcmp(str,"dark")) {
+		env_val = 1;
+	}else if (0 == strcmp(str,"outdoor")) {
+		env_val = 3;
+	}
+	else
+	{
+		env_val = 2;
+	}
+	dev_info(&led->client->dev,"%s,the enviroment val %d,mode=%d",__func__,env_val,aw2015_led_mode_val);
+
+	switch (aw2015_led_mode_val) {
+	case FLASH_URGENT:
+	case FLASH_ALERT:
+	case FLASH_USUAL:
+	case FLASH_SINGLE:
+		if (1 == env_val) {
+			aw2015_write(led, AW2015_REG_PWM1, 0x80);
+		}else if (3 == env_val) {
+			aw2015_write(led, AW2015_REG_PWM1, 0xff);
+		}
+		else
+		{
+			aw2015_write(led, AW2015_REG_PWM1, 0xcc);
+		}
+		break;
+	case FLASH_ALWAYSON:
+		if (1 == env_val) {
+			aw2015_write(led, AW2015_REG_PWM1, 0x66);
+			aw2015_write(led, AW2015_REG_PWM1, 0x4d);
+		}else if (3 == env_val) {
+			aw2015_write(led, AW2015_REG_PWM1, 0xcc);
+		}
+		else
+		{
+			aw2015_write(led, AW2015_REG_PWM1, 0x80);
+		}
+		break;
+	default:
+        dev_info(&led->client->dev,"%s,do not support this led mode",__func__);
+		break;
+	}
+	return len;
+}
 
 static DEVICE_ATTR(blink, 0664, NULL, aw2015_store_blink);
 static DEVICE_ATTR(led_time, 0664, aw2015_led_time_show, aw2015_led_time_store);
 static DEVICE_ATTR(reg, 0664, aw2015_reg_show, aw2015_reg_store);
 static DEVICE_ATTR(pattern, 0664, NULL, aw2015_pattern_store);
+static DEVICE_ATTR(enviroment, 0664, NULL, aw2015_enviroment_brightest_store);
 
 
 static struct attribute *aw2015_led_attributes[] = {
@@ -677,6 +759,7 @@ static struct attribute *aw2015_led_attributes[] = {
 	&dev_attr_led_time.attr,
 	&dev_attr_reg.attr,
 	&dev_attr_pattern.attr,
+	&dev_attr_enviroment.attr,
 	NULL,
 };
 

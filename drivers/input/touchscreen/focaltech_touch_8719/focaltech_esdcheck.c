@@ -31,7 +31,7 @@
 *        v1.0:
 *            First release. By luougojin 2016-08-03
 *        v1.1: By luougojin 2017-02-15
-*            1. Add LCD_ESD_PATCH to control idc_esdcheck_lcderror
+*            1. Add LCD_ESD_PATCH to control idc_esdcheck_lcderror_8719
 *****************************************************************************/
 
 /*****************************************************************************
@@ -86,16 +86,16 @@ static struct fts_esdcheck_st fts_esdcheck_data;
 *  Output:
 *  Return:
 *****************************************************************************/
-int lcd_need_reset;
+int lcd_need_reset_8719;
 static int tp_need_recovery; /* LCD reset cause Tp reset */
-int idc_esdcheck_lcderror(struct fts_ts_data *ts_data)
+int idc_esdcheck_lcderror_8719(struct fts_ts_data *ts_data)
 {
     int ret = 0;
     u8 val = 0;
     struct i2c_client *client = ts_data->client;
 
     FTS_DEBUG("[ESD]Check LCD ESD");
-    if ( (tp_need_recovery == 1) && (lcd_need_reset == 0) ) {
+    if ( (tp_need_recovery == 1) && (lcd_need_reset_8719 == 0) ) {
         tp_need_recovery = 0;
         /* LCD reset, need recover TP state */
         fts_tp_state_recovery_8719(client);
@@ -109,12 +109,12 @@ int idc_esdcheck_lcderror(struct fts_ts_data *ts_data)
 
     if (val == 0xAA) {
         /*
-        * 1. Set flag lcd_need_reset = 1;
-        * 2. LCD driver need reset(recovery) LCD and set lcd_need_reset to 0
+        * 1. Set flag lcd_need_reset_8719 = 1;
+        * 2. LCD driver need reset(recovery) LCD and set lcd_need_reset_8719 to 0
         * 3. recover TP state
         */
         FTS_INFO("LCD ESD, Execute LCD reset!");
-        lcd_need_reset = 1;
+        lcd_need_reset_8719 = 1;
         tp_need_recovery = 1;
     }
 
@@ -272,7 +272,7 @@ static int esdcheck_algorithm(struct fts_ts_data *ts_data)
 
     /* 5. IDC esd check lcd  default:close */
 #if 1//LCD_ESD_PATCH
-    idc_esdcheck_lcderror(ts_data);
+    idc_esdcheck_lcderror_8719(ts_data);
 #endif
 
     /* 6. Get Chip ID */
@@ -322,13 +322,13 @@ static void esdcheck_func(struct work_struct *work)
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_set_intr
+*  Name: fts_esdcheck_set_intr_8719
 *  Brief: interrupt flag (main used in interrupt tp report)
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_set_intr(bool intr)
+int fts_esdcheck_set_intr_8719(bool intr)
 {
     /* interrupt don't add debug message */
     fts_esdcheck_data.intr = intr;
@@ -336,41 +336,41 @@ int fts_esdcheck_set_intr(bool intr)
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_get_status(void)
+*  Name: fts_esdcheck_get_status_8719(void)
 *  Brief: get current status
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_get_status(void)
+int fts_esdcheck_get_status_8719(void)
 {
     /* interrupt don't add debug message */
     return fts_esdcheck_data.mode;
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_proc_busy
+*  Name: fts_esdcheck_proc_busy_8719
 *  Brief: When APK or ADB command access TP via driver, then need set proc_debug,
 *         then will not check ESD.
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_proc_busy(bool proc_debug)
+int fts_esdcheck_proc_busy_8719(bool proc_debug)
 {
     fts_esdcheck_data.proc_debug = proc_debug;
     return 0;
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_switch
+*  Name: fts_esdcheck_switch_8719
 *  Brief: FTS esd check function switch.
 *  Input:   enable:  1 - Enable esd check
 *                    0 - Disable esd check
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_switch(bool enable)
+int fts_esdcheck_switch_8719(bool enable)
 {
     struct fts_ts_data *ts_data = fts_data;
     FTS_FUNC_ENTER();
@@ -395,32 +395,32 @@ int fts_esdcheck_switch(bool enable)
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_suspend
+*  Name: fts_esdcheck_suspend_8719
 *  Brief: Run when tp enter into suspend
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_suspend(void)
+int fts_esdcheck_suspend_8719(void)
 {
     FTS_FUNC_ENTER();
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
     fts_esdcheck_data.suspend = 1;
     FTS_FUNC_EXIT();
     return 0;
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_resume
+*  Name: fts_esdcheck_resume_8719
 *  Brief: Run when tp resume
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_resume( void )
+int fts_esdcheck_resume_8719( void )
 {
     FTS_FUNC_ENTER();
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
     fts_esdcheck_data.suspend = 0;
     FTS_FUNC_EXIT();
     return 0;
@@ -441,11 +441,11 @@ static ssize_t fts_esdcheck_store(struct device *dev, struct device_attribute *a
     if (FTS_SYSFS_ECHO_ON(buf)) {
         FTS_DEBUG("enable esdcheck");
         fts_esdcheck_data.mode = ENABLE;
-        fts_esdcheck_switch(ENABLE);
+        fts_esdcheck_switch_8719(ENABLE);
     } else if (FTS_SYSFS_ECHO_OFF(buf)) {
         FTS_DEBUG("disable esdcheck");
         fts_esdcheck_data.mode = DISABLE;
-        fts_esdcheck_switch(DISABLE);
+        fts_esdcheck_switch_8719(DISABLE);
     }
     mutex_unlock(&input_dev->mutex);
 
@@ -465,7 +465,7 @@ static ssize_t fts_esdcheck_show(struct device *dev, struct device_attribute *at
     struct input_dev *input_dev = fts_data->input_dev;
 
     mutex_lock(&input_dev->mutex);
-    count = snprintf(buf, PAGE_SIZE, "Esd check: %s\n", fts_esdcheck_get_status() ? "On" : "Off");
+    count = snprintf(buf, PAGE_SIZE, "Esd check: %s\n", fts_esdcheck_get_status_8719() ? "On" : "Off");
     mutex_unlock(&input_dev->mutex);
 
     return count;
@@ -508,13 +508,13 @@ int fts_create_esd_sysfs(struct i2c_client *client)
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_init
+*  Name: fts_esdcheck_init_8719
 *  Brief: Init and create a queue work to check esd
 *  Input:
 *  Output:
 *  Return: < 0: Fail to create esd check queue
 *****************************************************************************/
-int fts_esdcheck_init(struct fts_ts_data *ts_data)
+int fts_esdcheck_init_8719(struct fts_ts_data *ts_data)
 {
     FTS_FUNC_ENTER();
 
@@ -528,20 +528,20 @@ int fts_esdcheck_init(struct fts_ts_data *ts_data)
     memset((u8 *)&fts_esdcheck_data, 0, sizeof(struct fts_esdcheck_st));
 
     fts_esdcheck_data.mode = ENABLE;
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
     fts_create_esd_sysfs(ts_data->client);
     FTS_FUNC_EXIT();
     return 0;
 }
 
 /*****************************************************************************
-*  Name: fts_esdcheck_exit
+*  Name: fts_esdcheck_exit_8719
 *  Brief: When FTS TP driver is removed, then call this function to destory work queue
 *  Input:
 *  Output:
 *  Return:
 *****************************************************************************/
-int fts_esdcheck_exit(struct fts_ts_data *ts_data)
+int fts_esdcheck_exit_8719(struct fts_ts_data *ts_data)
 {
     FTS_FUNC_ENTER();
 

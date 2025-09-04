@@ -1852,7 +1852,7 @@ static void fts_fwupg_work(struct work_struct *work)
     ts_data->fw_loading = 1;
     fts_irq_disable_8719();
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(DISABLE);
+    fts_esdcheck_switch_8719(DISABLE);
 #endif
 
     FTS_INFO("get upgrade fw file");
@@ -1866,7 +1866,7 @@ static void fts_fwupg_work(struct work_struct *work)
     }
 
 #if FTS_ESDCHECK_EN
-    fts_esdcheck_switch(ENABLE);
+    fts_esdcheck_switch_8719(ENABLE);
 #endif
     fts_irq_enable_8719();
     ts_data->fw_loading = 0;

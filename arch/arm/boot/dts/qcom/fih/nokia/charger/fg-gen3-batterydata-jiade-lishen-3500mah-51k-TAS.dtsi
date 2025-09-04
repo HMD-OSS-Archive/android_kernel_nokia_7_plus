@@ -1,53 +1,54 @@
-qcom,C1N_3000mah_68k {
+
+qcom,3750789_fih_taishan_jd_3500mah_fg_averaged_masterslave_jan3th2019 {
 	qcom, = <24>;
-	/* #2854679_FIH_SAT660_3000mAh_averaged_MasterSlave_Apr19th2017*/
+	/* #3750789_FIH_Taishan_JD_3500mAH_FG_averaged_MasterSlave_Jan3th2019*/
 	qcom,max-voltage-uv = <4400000>;
 	qcom,fg-cc-cv-threshold-mv = <4390>;
-	qcom,nom-batt-capacity-mah = <3000>;
+	qcom,nom-batt-capacity-mah = <3500>;
 	qcom,fastchg-current-ma = <3000>;
 	qcom,batt-id-kohm = <51>;
 	qcom,battery-beta = <3435>;
-	qcom,battery-type = "TAS_jiade_lishen_3500mah_51k";
-	qcom,checksum = <0xB110>;
-	qcom,gui-version = "PM660GUI - 0.0.0.36";
+	qcom,battery-type = "TAS_HE376_jiade_lishen_3500mAh_51k";
+	qcom,checksum = <0x429C>;
+	qcom,gui-version = "PM660GUI - 0.0.0.45";
 	qcom,fg-profile-data = [
-		 6C 1F B0 05
-		 72 0A 9F FC
-		 7B 1D 53 F4
-		 90 12 D9 1D
-		 01 18 0C 23
-		 B0 45 62 52
-		 56 00 00 00
-		 10 00 00 00
-		 00 00 89 BB
-		 E4 CD 98 BD
-		 24 00 08 00
-		 23 EA 11 ED
-		 72 05 61 FB
-		 FF 0C 97 0A
-		 72 07 9E 32
-		 29 06 09 20
+		 42 20 F7 04
+		 DB 0A 07 06
+		 01 1D 0F FB
+		 2D 05 57 03
+		 0C 18 EF 23
+		 08 44 BA 5A
+		 89 00 00 00
+		 0F 00 00 00
+		 00 00 CD C4
+		 3D C4 20 C2
+		 21 00 08 00
+		 2F D3 75 E5
+		 DF FD 0F F2
+		 9E EB 6E 0B
+		 39 F5 D2 1B
+		 1B 06 09 20
 		 27 00 14 00
-		 D0 1F 87 05
-		 7F 0A 4E 06
-		 68 1D 32 00
-		 0F 0B C3 14
-		 56 19 D0 22
-		 7E 45 05 53
-		 55 00 00 00
-		 0E 00 00 00
-		 00 00 3A CC
-		 EC BA 7C AB
-		 1A 00 00 00
-		 BE EB 11 ED
-		 6B 06 CB F3
-		 C5 FC E7 F2
-		 9C 02 F0 22
-		 C6 33 CC FF
+		 A1 1F AD 05
+		 74 0A 4A 06
+		 D4 1C DE 02
+		 08 0C 38 12
+		 89 18 13 2A
+		 8C 4D 01 62
+		 67 00 00 00
+		 0D 00 00 00
+		 00 00 E9 D5
+		 17 CA AA AA
+		 1D 00 00 00
+		 26 EA 75 E5
+		 AD F4 2A EB
+		 36 00 A6 03
+		 C8 00 F0 13
+		 A7 33 CC FF
 		 07 10 00 00
-		 14 0C 66 46
-		 1A 00 40 00
-		 97 01 0A FA
+		 98 0D 66 46
+		 1D 00 40 00
+		 62 01 0A FA
 		 FF 00 00 00
 		 00 00 00 00
 		 00 00 00 00
